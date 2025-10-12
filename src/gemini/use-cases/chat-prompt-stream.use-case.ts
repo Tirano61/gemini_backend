@@ -1,39 +1,23 @@
-import { createPartFromUri, createUserContent, GoogleGenAI } from "@google/genai";
+import { Content, createPartFromUri, createUserContent, GoogleGenAI } from "@google/genai";
 import { BasicPromptDto } from "../dtos/basic-prompt.dto";
 import { ChatPromptDto } from "../dtos/chat-prompt.dto";
+import { geminiUploadFile } from "../helpers/gemini-upload-file";
 
 
 
 
-export const chatPromptStreamUseCase = async (geminiAi: GoogleGenAI, chatPromptDto: ChatPromptDto) =>{
+export const chatPromptStreamUseCase = async (geminiAi: GoogleGenAI, chatPromptDto: ChatPromptDto, history: Content[]) =>{
 
     const {prompt, files = []} = chatPromptDto;
 
-    const uploadedFiles = await Promise.all(
-        files.map((file) => {
-            const blob = new Blob([new Uint8Array(file.buffer)], {
-                type: file.mimetype?.includes('image') ? file.mimetype : 'image/jpeg',
-            });
-            const image = geminiAi.files.upload({ file: blob });
-            return image;
-        })
-    );
+    const uploadedFiles = await geminiUploadFile(geminiAi, files);
  
     const chat = geminiAi.chats.create({
         model: "gemini-2.5-flash",
         config: {
             systemInstruction: "Responde unicamente en español, de forma concisa y formato markdown.",
         },
-        history: [
-        {
-            role: "user",
-            parts: [{ text: "Hello" }],
-        },
-        {
-            role: "model",
-            parts: [{ text: "Great to meet you. What would you like to know?" }],
-        },
-        ],
+        history: history,
     });
   
     return chat.sendMessageStream({

@@ -1,5 +1,6 @@
 import { createPartFromUri, createUserContent, GoogleGenAI } from "@google/genai";
 import { BasicPromptDto } from "../dtos/basic-prompt.dto";
+import { geminiUploadFile } from "../helpers/gemini-upload-file";
 
 
 export const basicPromptUseCase = async (geminiAi: GoogleGenAI, basicPromptDto: BasicPromptDto) =>{
@@ -21,15 +22,7 @@ export const basicPromptStreamUseCase = async (geminiAi: GoogleGenAI, basicPromp
 
     const {prompt, files = []} = basicPromptDto;
 
-    const images = await Promise.all(
-        files.map((file) => {
-            const blob = new Blob([new Uint8Array(file.buffer)], {
-                type: file.mimetype?.includes('image') ? file.mimetype : 'image/jpeg',
-            });
-            const image = geminiAi.files.upload({ file: blob });
-            return image;
-        })
-    );
+    const images = await geminiUploadFile(geminiAi, files);
  
     console.log(files);
  

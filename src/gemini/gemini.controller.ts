@@ -82,7 +82,7 @@ export class GeminiController {
   }
 
   @Post('image-generation')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('files'))
   async imgaeGeneration( 
     @Body() imageGenerationDto: ImageGenerationDto,
     @UploadedFiles() files: Array<Express.Multer.File>,

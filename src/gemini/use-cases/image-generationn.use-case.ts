@@ -1,11 +1,11 @@
-import { Content, ContentListUnion, createPartFromUri, createUserContent, GoogleGenAI, Modality } from "@google/genai";
-import { BasicPromptDto } from "../dtos/basic-prompt.dto";
-import { ChatPromptDto } from "../dtos/chat-prompt.dto";
+import { Content, ContentListUnion, createPartFromUri, GoogleGenAI, Modality } from "@google/genai";
 import { geminiUploadFile } from "../helpers/gemini-upload-file";
 import { ImageGenerationDto } from "../dtos/image-generation.dto";
-import { response } from "express";
 import {v4 as uuidV4 } from "uuid";
+import path from "path";
+import * as fs from "node:fs";
 
+const AI_IMAGES_PATH = path.join(__dirname, '..', '..', '..', 'public', 'ai-images');
 
 export interface ImageGenerationResponse
 {
@@ -17,11 +17,10 @@ export const imageGenerationUseCase = async (geminiAi: GoogleGenAI, imageGenerat
 
     const {prompt, files = []} = imageGenerationDto;
 
-    
     const contents: ContentListUnion = [
         { text: prompt }
     ];
-    const uploadedFiles = await geminiUploadFile(geminiAi, files);
+    const uploadedFiles = await geminiUploadFile(geminiAi, files, { transformToPng: true });
 
     uploadedFiles.forEach(file => {
         contents.push(createPartFromUri(file.uri ?? '', file.mimeType ?? ''));
@@ -33,10 +32,9 @@ export const imageGenerationUseCase = async (geminiAi: GoogleGenAI, imageGenerat
         config: {
             responseModalities: [ Modality.TEXT, Modality.IMAGE ],
         },
-        
     });
 
-    console.log(response);
+    //console.log(response);
 
     let imageUrl = '';
     let text = '';
@@ -52,14 +50,17 @@ export const imageGenerationUseCase = async (geminiAi: GoogleGenAI, imageGenerat
 
         const imageData = part.inlineData.data!;
         const buffer = Buffer.from(imageData, 'base64');
-        console.log(buffer);
+        const imagePath = path.join(AI_IMAGES_PATH, `${imageId}.png`);
+        fs.writeFileSync(imagePath, buffer);
+        imageUrl = `${process.env.API_URL}/ai-images/${imageId}.png`;
+        //console.log(buffer);
     }
 
-    console.log({text});
+    //console.log({text});
     
     return {
-        imageUrl: 'https://example.com/generated-image.png',
-        text: 'Imagen generada con éxito.'
+        imageUrl: imageUrl,
+        text: text
     }
 
 }

@@ -17,11 +17,10 @@ export const imageGenerationUseCase = async (geminiAi: GoogleGenAI, imageGenerat
 
     const {prompt, files = []} = imageGenerationDto;
 
-    
     const contents: ContentListUnion = [
         { text: prompt }
     ];
-    const uploadedFiles = await geminiUploadFile(geminiAi, files);
+    const uploadedFiles = await geminiUploadFile(geminiAi, files, { transformToPng: true });
 
     uploadedFiles.forEach(file => {
         contents.push(createPartFromUri(file.uri ?? '', file.mimeType ?? ''));
@@ -33,10 +32,9 @@ export const imageGenerationUseCase = async (geminiAi: GoogleGenAI, imageGenerat
         config: {
             responseModalities: [ Modality.TEXT, Modality.IMAGE ],
         },
-        
     });
 
-    console.log(response);
+    //console.log(response);
 
     let imageUrl = '';
     let text = '';
@@ -55,10 +53,10 @@ export const imageGenerationUseCase = async (geminiAi: GoogleGenAI, imageGenerat
         const imagePath = path.join(AI_IMAGES_PATH, `${imageId}.png`);
         fs.writeFileSync(imagePath, buffer);
         imageUrl = `${process.env.API_URL}/ai-images/${imageId}.png`;
-        console.log(buffer);
+        //console.log(buffer);
     }
 
-    console.log({text});
+    //console.log({text});
     
     return {
         imageUrl: imageUrl,
